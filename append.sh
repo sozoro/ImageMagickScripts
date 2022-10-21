@@ -1,7 +1,7 @@
 #! /usr/bin/env nix-shell
 #!nix-shell -i bash -p imagemagick
 
-# JPEG画像を名前順に2組みにして、縦書きの本のページのように右左の順に結合する。
+# JPEG画像を名前順に2組にして、縦書きの本のページのように右左の順に結合する。
 # 出力する画像の名前は "appended_xx.jpg"
 
 pics=`ls -1 | grep ".*\.jpg"`
