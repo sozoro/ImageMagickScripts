@@ -125,18 +125,18 @@ fi
 
 numOfPagePics=`echo "$pagePics" | wc -l`
 
-if [ -n "$pagePics" ]; then
-  if [ $(($numOfPagePics % 2)) -eq 1 ]; then
-    lastPage=`echo "$pagePics" | awk 'END{ print }'`
-    pagePics=`echo "$pagePics" | awk 'NR<'$numOfPagePics'{ print }'`
-    if $verticalWriting; then
-      lr="l"
-    else
-      lr="r"
-    fi
-    addBlankPage "$lastPage" $lr "${tmpDir}/${tmpFilePrefix}last.${tmpPicExt}"
+if [ -n "$pagePics" ] && [ $(($numOfPagePics % 2)) -eq 1 ]; then
+  lastPage=`echo "$pagePics" | awk 'END{ print }'`
+  pagePics=`echo "$pagePics" | awk 'NR<'$numOfPagePics'{ print }'`
+  if $verticalWriting; then
+    lr="l"
+  else
+    lr="r"
   fi
+  addBlankPage "$lastPage" $lr "${tmpDir}/${tmpFilePrefix}last.${tmpPicExt}"
+fi
 
+if [ "$numOfPagePics" -gt 1 ]; then
   if $verticalWriting; then
     fstFile='"\""$(i*2)"\""'
     sndFile='"\""$(i*2-1)"\""'
