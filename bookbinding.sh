@@ -98,9 +98,9 @@ eval `echo "$opts" | awk \
   }'`
 
 if [ -n "$args" ]; then
-  mergingPics=`echo "$args" | sed -e 's/^ *//' -e 's/ /\n/g'`
+  pairingPics=`echo "$args" | sed -e 's/^ *//' -e 's/ /\n/g'`
 else
-  mergingPics=`ls -1 | grep -E ".*\."$picExt`
+  pairingPics=`ls -1 | grep -E ".*\."$picExt`
 fi
 
 if [ -z "$output" ]; then
@@ -112,8 +112,8 @@ echo -n "" > "$tmpDir/zero"
 rm "$tmpDir/"*
 
 if $blankTopPage; then
-  sndPage=`echo "$mergingPics" | awk 'NR==1{ print }'`
-  mergingPics=`echo "$mergingPics" | awk 'NR>1{ print }'`
+  sndPage=`echo "$pairingPics" | awk 'NR==1{ print }'`
+  pairingPics=`echo "$pairingPics" | awk 'NR>1{ print }'`
   if $verticalWriting; then
     lr="r"
   else
@@ -122,11 +122,11 @@ if $blankTopPage; then
   addBlankPage "$sndPage" $lr "${tmpDir}/${tmpFilePrefix}00.${tmpPicExt}"
 fi
 
-numOfMergePics=`echo "$mergingPics" | wc -l`
+numOfPairingPics=`echo "$pairingPics" | wc -l`
 
-if [ $(($numOfMergePics % 2)) -eq 1 ]; then
-  lastPage=`echo "$mergingPics" | awk 'END{ print }'`
-  mergingPics=`echo "$mergingPics" | awk 'NR<'$numOfMergePics'{ print }'`
+if [ $(($numOfPairingPics % 2)) -eq 1 ]; then
+  lastPage=`echo "$pairingPics" | awk 'END{ print }'`
+  pairingPics=`echo "$pairingPics" | awk 'NR<'$numOfPairingPics'{ print }'`
   if $verticalWriting; then
     lr="l"
   else
@@ -143,7 +143,7 @@ else
   sndFile='"\""$(i*2)"\""'
 fi
 
-echo "$mergingPics" | awk -F '\n' -vRS='\n\n' \
+echo "$pairingPics" | awk -F '\n' -vRS='\n\n' \
   -v cmd="convert +append" \
   '{ n=int(log(NF/2)/log(10)+0.000000000000001)+1
      output="\"'$tmpDir/$tmpFilePrefix'%0"n"d.'$tmpPicExt'\""
