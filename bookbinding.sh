@@ -100,7 +100,8 @@ eval `echo "$opts" | awk \
 if [ -n "$args" ]; then
   pagePics=`echo "$args" | sed -e 's/^ *//' -e 's/ /\n/g'`
 else
-  pagePics=`ls -1 | grep -E ".*\."$picExt`
+  pagePics=`ls -1 | grep -E ".*\."$picExt` \
+    || (echo No images in this directory >&2; exit 1)
 fi
 
 if [ -z "$output" ]; then
@@ -135,22 +136,24 @@ if [ $(($numOfPagePics % 2)) -eq 1 ]; then
   addBlankPage "$lastPage" $lr "${tmpDir}/${tmpFilePrefix}last.${tmpPicExt}"
 fi
 
-if $verticalWriting; then
-  fstFile='"\""$(i*2)"\""'
-  sndFile='"\""$(i*2-1)"\""'
-else
-  fstFile='"\""$(i*2-1)"\""'
-  sndFile='"\""$(i*2)"\""'
-fi
+if [ "$numOfPagePics" -gt 1 ]; then
+  if $verticalWriting; then
+    fstFile='"\""$(i*2)"\""'
+    sndFile='"\""$(i*2-1)"\""'
+  else
+    fstFile='"\""$(i*2-1)"\""'
+    sndFile='"\""$(i*2)"\""'
+  fi
 
-echo "$pagePics" | awk -F '\n' -vRS='\n\n' \
-  -v cmd="convert +append" \
-  '{ n=int(log(NF/2)/log(10)+0.000000000000001)+1
-     output="\"'$tmpDir/$tmpFilePrefix'%0"n"d.'$tmpPicExt'\""
-     for (i=1; i<=(NF/2); i++) {
-       printf cmd" "'$fstFile'" "'$sndFile'" "output"\n", i;
-     } \
-   }' | bash -x
+  echo "$pagePics" | awk -F '\n' -vRS='\n\n' \
+    -v cmd="convert +append" \
+    '{ n=int(log(NF/2)/log(10)+0.000000000000001)+1
+       output="\"'$tmpDir/$tmpFilePrefix'%0"n"d.'$tmpPicExt'\""
+       for (i=1; i<=(NF/2); i++) {
+         printf cmd" "'$fstFile'" "'$sndFile'" "output"\n", i;
+       } \
+     }' | bash -x
+fi
 
 echo "Producing PDF..."
 convert -density $density -colorspace RGB "${tmpDir}/${tmpFilePrefix}*.${tmpPicExt}" "$output"
