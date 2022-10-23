@@ -1,5 +1,5 @@
-#! /usr/bin/env nix-shell
-#!nix-shell -i bash -p imagemagick
+#!/usr/bin/env nix-shell
+#!nix-shell --pure -i bash -p imagemagick gawk getopt
 
 # set -x
 
