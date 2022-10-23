@@ -21,6 +21,8 @@ Bind images to a PDF in name order while merging each two images into one PDF pa
     (default: 200)
 -l, --leave-tmp-dir
     Leave temporary directory without removing.
+-g, --grayscale
+    Make output PDF Grayscale.
 --help
     Show this message and exit.
 EOF`
@@ -50,9 +52,10 @@ verticalWriting='true'
 blankTopPage='false'
 density=200
 rmTmpDir='true'
+grayscale=''
 
-long_opts='output:,vertical,horizonal,blank-top-page,density:,leave-tmp-dir,help'
-opts=`getopt --unquoted --name $0 --options 'o:vhed:l' --longoptions "$long_opts" -- $@`
+long_opts='output:,vertical,horizonal,blank-top-page,density:,leave-tmp-dir,grayscale,help'
+opts=`getopt --unquoted --name $0 --options 'o:vhed:lg' --longoptions "$long_opts" -- $@`
 
 eval `echo "$opts" | awk \
   '{ for(i=1; i<=NF; i++) {
@@ -82,6 +85,10 @@ eval `echo "$opts" | awk \
          case "--leave-tmp-dir":
          case "-l":
            printf "rmTmpDir=false; "
+           break
+         case "--grayscale":
+         case "-g":
+           printf "grayscale=\"-type GrayScale\"; "
            break
          case "--help":
            i++
@@ -156,7 +163,7 @@ if [ "$numOfPagePics" -gt 1 ]; then
 fi
 
 echo "Producing PDF..."
-convert -density $density -colorspace RGB \
+convert -density $density -colorspace RGB $grayscale \
   "${tmpDir}/${tmpFilePrefix}*.${tmpPicExt}" "$output"
 
 if $rmTmpDir; then
