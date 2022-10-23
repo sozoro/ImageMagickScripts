@@ -122,11 +122,11 @@ if $blankTopPage; then
   addBlankPage "$sndPage" $lr "${tmpDir}/${tmpFilePrefix}00.${tmpPicExt}"
 fi
 
-numOfAppPics=`echo "$mergingPics" | wc -l`
+numOfMergePics=`echo "$mergingPics" | wc -l`
 
-if [ $(($numOfAppPics % 2)) -eq 1 ]; then
+if [ $(($numOfMergePics % 2)) -eq 1 ]; then
   lastPage=`echo "$mergingPics" | awk 'END{ print }'`
-  mergingPics=`echo "$mergingPics" | awk 'NR<'$numOfAppPics'{ print }'`
+  mergingPics=`echo "$mergingPics" | awk 'NR<'$numOfMergePics'{ print }'`
   if $verticalWriting; then
     lr="l"
   else
