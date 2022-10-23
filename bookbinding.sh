@@ -145,7 +145,7 @@ if [ "$numOfPagePics" -gt 1 ]; then
     sndFile='"\""$(i*2)"\""'
   fi
 
-  echo "$pagePics" | awk -F '\n' -vRS='\n\n' \
+  echo "$pagePics" | awk -F '\n' -v RS='\n\n' \
     -v cmd="convert +append" \
     '{ n=int(log(NF/2)/log(10)+0.000000000000001)+1
        output="\"'$tmpDir/$tmpFilePrefix'%0"n"d.'$tmpPicExt'\""
@@ -156,7 +156,8 @@ if [ "$numOfPagePics" -gt 1 ]; then
 fi
 
 echo "Producing PDF..."
-convert -density $density -colorspace RGB "${tmpDir}/${tmpFilePrefix}*.${tmpPicExt}" "$output"
+convert -density $density -colorspace RGB \
+  "${tmpDir}/${tmpFilePrefix}*.${tmpPicExt}" "$output"
 
 if $rmTmpDir; then
   rm -rf $tmpDir
