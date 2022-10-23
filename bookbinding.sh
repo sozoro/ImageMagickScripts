@@ -101,7 +101,7 @@ if [ -n "$args" ]; then
   pagePics=`echo "$args" | sed -e 's/^ *//' -e 's/ /\n/g'`
 else
   pagePics=`ls -1 | grep -E ".*\."$picExt` \
-    || (echo No images in this directory >&2; exit 1)
+    || (echo error: No images in this directory >&2; exit 1)
 fi
 
 if [ -z "$output" ]; then
@@ -125,18 +125,18 @@ fi
 
 numOfPagePics=`echo "$pagePics" | wc -l`
 
-if [ $(($numOfPagePics % 2)) -eq 1 ]; then
-  lastPage=`echo "$pagePics" | awk 'END{ print }'`
-  pagePics=`echo "$pagePics" | awk 'NR<'$numOfPagePics'{ print }'`
-  if $verticalWriting; then
-    lr="l"
-  else
-    lr="r"
+if [ -n "$pagePics" ]; then
+  if [ $(($numOfPagePics % 2)) -eq 1 ]; then
+    lastPage=`echo "$pagePics" | awk 'END{ print }'`
+    pagePics=`echo "$pagePics" | awk 'NR<'$numOfPagePics'{ print }'`
+    if $verticalWriting; then
+      lr="l"
+    else
+      lr="r"
+    fi
+    addBlankPage "$lastPage" $lr "${tmpDir}/${tmpFilePrefix}last.${tmpPicExt}"
   fi
-  addBlankPage "$lastPage" $lr "${tmpDir}/${tmpFilePrefix}last.${tmpPicExt}"
-fi
 
-if [ "$numOfPagePics" -gt 1 ]; then
   if $verticalWriting; then
     fstFile='"\""$(i*2)"\""'
     sndFile='"\""$(i*2-1)"\""'
