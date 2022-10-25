@@ -27,26 +27,11 @@ Bind images to a PDF in name order while merging each two images into one PDF pa
     Show this message and exit.
 EOF`
 
-function addBlankPage () {
-  wxh=$(identify "$1" | awk '{ print $3 }')
-  width=$(echo "$wxh" | sed 's/x.*$//')
-  height=$(echo "$wxh" | sed 's/^.*x//')
-  extent="$((width*2))x$height"
-
-  if [ "$2" == "l" ]; then
-    gravity="East"
-  else
-    gravity="West"
-  fi
-
-  echo "> "convert "$1" -gravity "$gravity" -extent "$extent" "$3"
-  convert "$1" -gravity "$gravity" -extent "$extent" "$3"
-}
-
 tmpDir='tmp.bookbinding'
 tmpFilePrefix='pdfPage_'
 picExt='(jpg|JPG|png|PNG)'
 tmpPicExt='jpg'
+zeroPadding='%04d'
 
 args=''
 output=''
@@ -107,9 +92,6 @@ eval $(echo "$opts" | awk \
      }
   }')
 
-# -----------------
-zeroPadding='%04d'
-
 if [ -z "$output" ]; then
   output=$(basename "$(pwd)").pdf
 fi
@@ -118,9 +100,25 @@ mkdir -p "$tmpDir"
 echo -n "" > "$tmpDir/zero"
 rm "$tmpDir/"*
 
+function addBlankPage () {
+  wxh=$(identify "$1" | awk '{ print $3 }')
+  width=$(echo "$wxh" | sed 's/x.*$//')
+  height=$(echo "$wxh" | sed 's/^.*x//')
+  extent="$((width*2))x$height"
+
+  if [ "$2" == "l" ]; then
+    gravity="East"
+  else
+    gravity="West"
+  fi
+
+  echo "> "convert "$1" -gravity "$gravity" -extent "$extent" "$3"
+  convert "$1" -gravity "$gravity" -extent "$extent" "$3"
+}
+
 function fileProcess () {
   if $blankTopPage; then
-    if [ $i -eq 1 ]; then
+    if [ "$i" -eq 1 ]; then
       if $verticalWriting; then
         lr='r'
       else
@@ -134,7 +132,7 @@ function fileProcess () {
     p=$i
   fi
 
-  if [ $p -ge 1 ]; then
+  if [ "$p" -ge 1 ]; then
     if [ $((p%2)) -eq 1 ]; then
       previous="$file"
     else
@@ -154,7 +152,6 @@ function fileProcess () {
 
 i=1
 previous=''
-
 if [ -n "$args" ]; then
   for file in $args
   do
@@ -183,75 +180,6 @@ fi
 echo "Producing PDF..."
 echo "> "convert -density $density -colorspace RGB $grayscale \
   "${tmpDir}/${tmpFilePrefix}*.${tmpPicExt}" "$output"
-convert -density $density -colorspace RGB $grayscale \
-  "${tmpDir}/${tmpFilePrefix}*.${tmpPicExt}" "$output"
-
-if $rmTmpDir; then
-  rm -rf $tmpDir
-fi
-
-exit 0
-# ------------------
-
-if [ -n "$args" ]; then
-  pagePics=$(echo "$args" | sed -e 's/^ *//' -e 's/ /\n/g')
-else
-  pagePics=$(ls -1 | grep -E ".*\."$picExt"$") \
-    || (echo error: No images in this directory >&2; exit 1)
-fi
-
-if [ -z "$output" ]; then
-  output=$(basename "$(pwd)").pdf
-fi
-
-mkdir -p "$tmpDir"
-echo -n "" > "$tmpDir/zero"
-rm "$tmpDir/"*
-
-if $blankTopPage; then
-  sndPage=$(echo "$pagePics" | awk 'NR==1{ print }')
-  pagePics=$(echo "$pagePics" | awk 'NR>1{ print }')
-  if $verticalWriting; then
-    lr="r"
-  else
-    lr="l"
-  fi
-  addBlankPage "$sndPage" $lr "${tmpDir}/${tmpFilePrefix}00.${tmpPicExt}"
-fi
-
-numOfPagePics=$(echo "$pagePics" | wc -l)
-
-if [ -n "$pagePics" ] && [ $(($numOfPagePics % 2)) -eq 1 ]; then
-  lastPage=$(echo "$pagePics" | awk 'END{ print }')
-  pagePics=$(echo "$pagePics" | awk 'NR<'"$numOfPagePics"'{ print }')
-  if $verticalWriting; then
-    lr="l"
-  else
-    lr="r"
-  fi
-  addBlankPage "$lastPage" $lr "${tmpDir}/${tmpFilePrefix}last.${tmpPicExt}"
-fi
-
-if [ "$numOfPagePics" -gt 1 ]; then
-  if $verticalWriting; then
-    fstFile='"\""$(i*2)"\""'
-    sndFile='"\""$(i*2-1)"\""'
-  else
-    fstFile='"\""$(i*2-1)"\""'
-    sndFile='"\""$(i*2)"\""'
-  fi
-
-  echo "$pagePics" | awk -F '\n' -v RS='\n\n' \
-    -v cmd="convert +append" \
-    '{ n=int(log(NF/2)/log(10)+0.000000000000001)+1
-       output="\"'$tmpDir/$tmpFilePrefix'%0"n"d.'$tmpPicExt'\""
-       for (i=1; i<=(NF/2); i++) {
-         printf cmd" "'"$fstFile"'" "'"$sndFile"'" "output"\n", i;
-       } \
-     }' | bash -x
-fi
-
-echo "Producing PDF..."
 convert -density $density -colorspace RGB $grayscale \
   "${tmpDir}/${tmpFilePrefix}*.${tmpPicExt}" "$output"
 
