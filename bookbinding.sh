@@ -31,6 +31,7 @@ function addBlankPage () {
   wxh=$(identify "$1" | awk '{ print $3 }')
   width=$(echo "$wxh" | sed 's/x.*$//')
   height=$(echo "$wxh" | sed 's/^.*x//')
+  extent="$((width*2))x$height"
 
   if [ "$2" == "l" ]; then
     gravity="East"
@@ -38,7 +39,8 @@ function addBlankPage () {
     gravity="West"
   fi
 
-  convert "$1" -gravity "$gravity" -extent "$((width*2))x$height" "$3"
+  echo "> "convert "$1" -gravity "$gravity" -extent "$extent" "$3"
+  convert "$1" -gravity "$gravity" -extent "$extent" "$3"
 }
 
 tmpDir='tmp.bookbinding'
@@ -104,6 +106,92 @@ eval $(echo "$opts" | awk \
        }
      }
   }')
+
+# -----------------
+zeroPadding='%04d'
+
+if [ -z "$output" ]; then
+  output=$(basename "$(pwd)").pdf
+fi
+
+mkdir -p "$tmpDir"
+echo -n "" > "$tmpDir/zero"
+rm "$tmpDir/"*
+
+function fileProcess () {
+  if $blankTopPage; then
+    if [ $i -eq 1 ]; then
+      if $verticalWriting; then
+        lr='r'
+      else
+        lr='l'
+      fi
+      tmpPic="$tmpDir/$tmpFilePrefix$(printf "$zeroPadding" 0).$tmpPicExt"
+      addBlankPage "$file" "$lr" "$tmpPic"
+    fi
+    p=$((i-1))
+  else
+    p=$i
+  fi
+
+  if [ $p -ge 1 ]; then
+    if [ $((p%2)) -eq 1 ]; then
+      previous="$file"
+    else
+      tmpPic="$tmpDir/$tmpFilePrefix$(printf "$zeroPadding" $((p/2))).$tmpPicExt"
+      if $verticalWriting; then
+        echo "> "convert +append "$file" "$previous" "$tmpPic"
+        convert +append "$file" "$previous" "$tmpPic"
+      else
+        echo "> "convert +append "$previous" "$file" "$tmpPic"
+        convert +append "$previous" "$file" "$tmpPic"
+      fi
+    fi
+  fi
+
+  ((i++))
+}
+
+i=1
+previous=''
+
+if [ -n "$args" ]; then
+  for file in $args
+  do
+    fileProcess
+  done
+else
+  for file in *
+  do
+    if [ -f "$file" ] && (echo "$file" | sed -n -z -r 's/^.*\.'$picExt'\n$//; t; q10')
+    then
+      fileProcess
+    fi
+  done
+fi
+
+if [ $((p%2)) -eq 1 ]; then
+  if $verticalWriting; then
+    lr='l'
+  else
+    lr='r'
+  fi
+  tmpPic="$tmpDir/$tmpFilePrefix$(printf "$zeroPadding" $(((p+1)/2))).$tmpPicExt"
+  addBlankPage "$previous" "$lr" "$tmpPic"
+fi
+
+echo "Producing PDF..."
+echo "> "convert -density $density -colorspace RGB $grayscale \
+  "${tmpDir}/${tmpFilePrefix}*.${tmpPicExt}" "$output"
+convert -density $density -colorspace RGB $grayscale \
+  "${tmpDir}/${tmpFilePrefix}*.${tmpPicExt}" "$output"
+
+if $rmTmpDir; then
+  rm -rf $tmpDir
+fi
+
+exit 0
+# ------------------
 
 if [ -n "$args" ]; then
   pagePics=$(echo "$args" | sed -e 's/^ *//' -e 's/ /\n/g')
