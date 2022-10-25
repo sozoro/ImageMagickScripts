@@ -1,5 +1,7 @@
-#!/usr/bin/env nix-shell
-#!nix-shell --pure -i bash -p imagemagick gawk getopt
+#!/usr/bin/env bash
+
+# #!/usr/bin/env nix-shell
+# #!nix-shell --pure -i bash -p imagemagick gawk getopt
 
 set -eu
 
@@ -28,9 +30,9 @@ Bind images to a PDF in name order while merging each two images into one PDF pa
 EOF`
 
 function addBlankPage () {
-  wxh=`identify $1 | awk '{ print $3 }'`
-  width=`echo "$wxh" | sed 's/x.*$//'`
-  height=`echo "$wxh" | sed 's/^.*x//'`
+  wxh=$(identify "$1" | awk '{ print $3 }')
+  width=$(echo "$wxh" | sed 's/x.*$//')
+  height=$(echo "$wxh" | sed 's/^.*x//')
 
   if [ "$2" == "l" ]; then
     gravity="East"
@@ -38,10 +40,10 @@ function addBlankPage () {
     gravity="West"
   fi
 
-  convert $1 -gravity $gravity -extent $(($width*2))x${height} $3
+  convert "$1" -gravity "$gravity" -extent "$((width*2))x$height" "$3"
 }
 
-tmpDir='bookbinding.tmp'
+tmpDir='tmp.bookbinding'
 tmpFilePrefix='pdfPage_'
 picExt='(jpg|JPG|png|PNG)'
 tmpPicExt='jpg'
@@ -55,9 +57,10 @@ rmTmpDir='true'
 grayscale=''
 
 long_opts='output:,vertical,horizonal,blank-top-page,density:,leave-tmp-dir,grayscale,help'
-opts=`getopt --unquoted --name $0 --options 'o:vhed:lg' --longoptions "$long_opts" -- $@`
+opts=$(getopt --unquoted --name "$0" \
+              --options 'o:vhed:lg' --longoptions "$long_opts" -- $@)
 
-eval `echo "$opts" | awk \
+eval $(echo "$opts" | awk \
   '{ for(i=1; i<=NF; i++) {
        switch($i) {
          case "--output":
@@ -102,17 +105,17 @@ eval `echo "$opts" | awk \
            break
        }
      }
-  }'`
+  }')
 
 if [ -n "$args" ]; then
-  pagePics=`echo "$args" | sed -e 's/^ *//' -e 's/ /\n/g'`
+  pagePics=$(echo "$args" | sed -e 's/^ *//' -e 's/ /\n/g')
 else
-  pagePics=`ls -1 | grep -E ".*\."$picExt` \
+  pagePics=$(ls -1 | grep -E ".*\."$picExt) \
     || (echo error: No images in this directory >&2; exit 1)
 fi
 
 if [ -z "$output" ]; then
-  output=`basename $(pwd)`.pdf
+  output=$(basename "$(pwd)").pdf
 fi
 
 mkdir -p "$tmpDir"
@@ -120,8 +123,8 @@ echo -n "" > "$tmpDir/zero"
 rm "$tmpDir/"*
 
 if $blankTopPage; then
-  sndPage=`echo "$pagePics" | awk 'NR==1{ print }'`
-  pagePics=`echo "$pagePics" | awk 'NR>1{ print }'`
+  sndPage=$(echo "$pagePics" | awk 'NR==1{ print }')
+  pagePics=$(echo "$pagePics" | awk 'NR>1{ print }')
   if $verticalWriting; then
     lr="r"
   else
@@ -130,11 +133,11 @@ if $blankTopPage; then
   addBlankPage "$sndPage" $lr "${tmpDir}/${tmpFilePrefix}00.${tmpPicExt}"
 fi
 
-numOfPagePics=`echo "$pagePics" | wc -l`
+numOfPagePics=$(echo "$pagePics" | wc -l)
 
 if [ -n "$pagePics" ] && [ $(($numOfPagePics % 2)) -eq 1 ]; then
-  lastPage=`echo "$pagePics" | awk 'END{ print }'`
-  pagePics=`echo "$pagePics" | awk 'NR<'$numOfPagePics'{ print }'`
+  lastPage=$(echo "$pagePics" | awk 'END{ print }')
+  pagePics=$(echo "$pagePics" | awk 'NR<'"$numOfPagePics"'{ print }')
   if $verticalWriting; then
     lr="l"
   else
@@ -157,7 +160,7 @@ if [ "$numOfPagePics" -gt 1 ]; then
     '{ n=int(log(NF/2)/log(10)+0.000000000000001)+1
        output="\"'$tmpDir/$tmpFilePrefix'%0"n"d.'$tmpPicExt'\""
        for (i=1; i<=(NF/2); i++) {
-         printf cmd" "'$fstFile'" "'$sndFile'" "output"\n", i;
+         printf cmd" "'"$fstFile"'" "'"$sndFile"'" "output"\n", i;
        } \
      }' | bash -x
 fi
