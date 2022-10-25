@@ -108,7 +108,7 @@ eval $(echo "$opts" | awk \
 if [ -n "$args" ]; then
   pagePics=$(echo "$args" | sed -e 's/^ *//' -e 's/ /\n/g')
 else
-  pagePics=$(ls -1 | grep -E ".*\."$picExt) \
+  pagePics=$(ls -1 | grep -E ".*\."$picExt"$") \
     || (echo error: No images in this directory >&2; exit 1)
 fi
 
